@@ -1,0 +1,560 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <title></title>
+
+    <link href='http://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
+
+    <link href="timeline.css" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js" charset="utf-8"></script>
+
+    <script src="stackedTimeline.js"></script>
+
+    <style>
+        /* Begin:  General styles for example page */
+        body {
+            font-family: "Open Sans", Arial, Helvetica, sans-serif;
+            font-size: 0.85em;
+        }
+
+        h2 {
+            margin-top: 0px;
+            margin-bottom: 5px;
+        }
+
+        div.example {
+            margin: 0 0 20px 20px;
+            padding: 10px;
+            border-top: 1px solid #a0a0a0;
+        }
+
+        div.api-controls {
+            max-width: 900px;
+            margin-left: 50px;
+        }
+
+            div.api-controls > div {
+                margin-bottom: 15px;
+            }
+
+            div.api-controls button {
+                height: 30px;
+            }
+
+            div.api-controls span {
+                padding: 5px;
+                border-radius: 5px;
+                margin-right: 20px;
+            }
+
+        .axis path,
+        .axis line {
+            fill: none;
+            stroke: black;
+            shape-rendering: crispEdges;
+        }
+
+        /* End:  General styles for example page */
+
+        /* Begin:  Basic styles - contains minimum required styles for all timelines */
+
+        .basic rect.pane {
+            fill: none;
+            pointer-events: all;
+        }
+
+        .basic rect.event-rect {
+            height: 20px;
+        }
+
+        .basic line.current-date-line {
+            stroke-width: 2;
+            stroke: red;
+            fill: none;
+        }
+
+        .basic div.hover-div {
+            border: 1px solid #000;
+            padding: 5px;
+            background-color: #FFF;
+        }
+
+        /* End:  Basic styles - contains minimum required styles for any timeline */
+
+        /* Begin:  Advanced styles - custom styles for advanced version */
+
+        .adv rect.pane {
+            fill: none;
+            pointer-events: all;
+            stroke: #000;
+            stroke-width: 1;
+        }
+
+        .adv g.x.axis g.tick line {
+            stroke: #d0d0d0;
+            stroke-dasharray: 10,10;
+        }
+
+        .adv g.y.axis g.tick line {
+            stroke: #e4e4e4;
+        }
+
+        .adv line.current-date-line {
+            stroke-width: 3;
+            stroke: blue;
+            fill: none;
+            opacity: 0.8;
+        }
+
+        .adv rect.first {
+            height: 20px;
+            fill: #90a5d0;
+            stroke: #000;
+            stroke-width: 1;
+        }
+
+        .adv rect.second {
+            height: 28px;
+            fill: rgba(243,102,102, 0.75);
+            stroke: #000;
+            stroke-width: 1;
+        }
+
+        .adv rect.third {
+            height: 10px;
+            fill: #7fe420;
+            stroke: #65b51a;
+            stroke-width: 1;
+        }
+
+        .adv rect.alt-third {
+            height: 15px;
+            fill: #1aafb5;
+            stroke: #179499;
+            stroke-width: 2;
+        }
+
+        .adv div.hover-div {
+            border: 1px solid #FFF;
+            padding: 5px;
+            background-color: #000;
+            color: #FFF;
+            opacity: 0.9;
+        }
+
+        /* Set the label-icons to use FontAwesome */
+        .adv text.label-icon {
+            font-family: "FontAwesome";
+            font-size: 1.3em;
+            fill: #000;
+        }
+
+        .adv text.fb-icon {
+            fill: #3E5B99;
+        }
+
+        /* End:  Advanced styles - custom styles for advanced version */
+    </style>
+
+
+</head>
+<body>
+
+    <div class="example">
+        <h2>Basic</h2>
+        <div><strong>Only required styling, single level of data, default options</strong></div><br />
+
+        <div id="basic-timeline" class="basic">
+        </div>
+
+        <div class="api-controls" id="basic-controls">
+
+            <div>
+                <button class="zoom-in" data-timeline="basic">Zoom in</button>
+                <button class="zoom-out" data-timeline="basic">Zoom out</button>
+                <button class="center-now" data-timeline="basic">Center on now</button>
+                <button class="go-to-range" data-timeline="basic">Zoom to data bounds</button>
+
+                <span>
+                    <label for="basic-width">Width: </label>
+                    <input class="width" data-timeline="basic" type="text" id="basic-width" style="width: 40px;" value="1000" />
+                </span>
+
+                <span>
+                    <label for="basic-height">Max height: </label>
+                    <input class="height" data-timeline="basic" type="text" id="basic-height" style="width: 40px;" value="300" />
+                </span>
+
+                <span>
+                    <label for="basic-row-height">Row height: </label>
+                    <input class="row-height" data-timeline="basic" type="text" id="basic-row-height" style="width: 40px;" value="30" />
+                </span>
+
+            </div>
+            <div>
+
+                <span>
+                    <label for="basic-label-width">Label width: </label>
+                    <input class="label-width" data-timeline="basic" type="text" id="basic-label-width" style="width: 40px;" value="130" />
+                </span>
+
+                <span>
+                    <label for="basic-limit-data">Limit date axis to data range: </label>
+                    <input class="limit-data" data-timeline="basic" type="checkbox" id="basic-limit-data" />
+                </span>
+
+
+                <span>
+                    <label for="basic-date-axis">Date axis position: </label>
+                    <select class="date-axis" data-timeline="basic" id="basic-date-axis">
+                        <option value="bottom">bottom</option>
+                        <option value="top">top</option>
+                        <option value="both">both</option>
+                    </select>
+                </span>
+
+                <span>
+                    <label for="basic-display-time-range">Display time range: </label>
+                    <input class="display-time-range" data-timeline="basic" type="checkbox" id="basic-display-time-range" checked="checked" />
+                </span>
+            </div>
+
+            <div>
+
+                <span>
+                    <label for="basic-display-current">Display current date line: </label>
+                    <input class="display-current" data-timeline="basic" type="checkbox" id="basic-display-current" checked="checked" />
+                </span>
+
+
+                <span>
+                    <label for="basic-update-current">Update current line every (ms): </label>
+                    <input class="update-current" data-timeline="basic" type="text" id="basic-update-current" style="width: 40px;" value="6000" />
+                </span>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="example">
+        <h2>Advanced</h2>
+        <div><strong>Custom styling, icons, multiple levels of data, some non-default options set in constructor.</strong></div><br />
+
+        <div id="adv-timeline" class="adv">
+        </div>
+
+        <div class="api-controls" id="adv-controls">
+
+            <div>
+                <button class="zoom-in" data-timeline="adv">Zoom in</button>
+                <button class="zoom-out" data-timeline="adv">Zoom out</button>
+                <button class="center-now" data-timeline="adv">Center on now</button>
+                <button class="go-to-range" data-timeline="adv">Zoom to data bounds</button>
+
+                <span>
+                    <label for="adv-width">Width: </label>
+                    <input class="width" data-timeline="adv" type="text" id="adv-width" style="width: 40px;" value="1300" />
+                </span>
+
+                <span>
+                    <label for="adv-height">Max height: </label>
+                    <input class="height" data-timeline="adv" type="text" id="adv-height" style="width: 40px;" value="350" />
+                </span>
+
+                <span>
+                    <label for="adv-row-height">Row height: </label>
+                    <input class="row-height" data-timeline="adv" type="text" id="adv-row-height" style="width: 40px;" value="50" />
+                </span>
+
+            </div>
+            <div>
+
+
+                <span>
+                    <label for="adv-label-width">Label width: </label>
+                    <input class="label-width" data-timeline="adv" type="text" id="adv-label-width" style="width: 40px;" value="130" />
+                </span>
+
+                <span>
+                    <label for="adv-limit-data">Limit date axis to data range: </label>
+                    <input class="limit-data" data-timeline="adv" type="checkbox" id="adv-limit-data" />
+                </span>
+
+                <span>
+                    <label for="adv-date-axis">Date axis position: </label>
+                    <select class="date-axis" data-timeline="adv" id="adv-date-axis">
+                        <option value="bottom">bottom</option>
+                        <option value="top">top</option>
+                        <option selected="selected" value="both">both</option>
+                    </select>
+                </span>
+
+                <span>
+                    <label for="adv-display-time-range">Display time range: </label>
+                    <input class="display-time-range" data-timeline="adv" type="checkbox" id="adv-display-time-range" checked="checked" />
+
+                </span>
+            </div>
+
+            <div>
+
+                <span>
+                    <label for="adv-display-current">Display current date line: </label>
+                    <input class="display-current" data-timeline="adv" type="checkbox" id="adv-display-current" checked="checked" />
+                </span>
+
+                <span>
+                    <label for="adv-update-current">Update current line every (ms): </label>
+                    <input class="update-current" data-timeline="adv" type="text" id="adv-update-current" style="width: 40px;" value="6000" />
+                </span>
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <script type="text/javascript">
+
+        //set a base date, used to just generate test data
+        var dateFormat = d3.time.format("%d/%m/%Y");
+        var baseDate = addDays(new Date(), -3);
+
+        //the data set for the basic example
+        basicData = {
+            config: [{ className: "bar" }],
+            rows: [
+            {
+                label: "Task ABC",
+                events: [{ hoverText: "Task ABC details...", start: baseDate, end: addDays(baseDate, 4) }]
+            },
+            {
+                label: "Person 123",
+                events: [{ hoverText: "Something about person 123", start: addDays(baseDate, 2), end: addDays(baseDate, 7) }]
+            },
+            {
+                label: "Things happening",
+                events: [{ start: addDays(baseDate, 1), end: addDays(baseDate, 6) }]
+            },
+            {
+                label: "Events 987",
+                events: [{ hoverText: "Extra detail for 987", start: addDays(baseDate, 2), end: addDays(baseDate, 7) }]
+            },
+            {
+                label: "VB-QWE",
+                events: [{ start: addDays(baseDate, 2), end: addDays(baseDate, 10) }]
+            },
+            {
+                label: "James T",
+                events: [{ start: addDays(baseDate, 4), end: addDays(baseDate, 7) }]
+            },
+            {
+                label: "Project Stuff",
+                events: [{ start: addDays(baseDate, 5), end: addDays(baseDate, 9) }]
+            }
+            ]
+        };
+
+
+        //set up and create the basic example
+        var basicOptions = {
+            data: basicData
+        }
+
+        var basicTimeline = d3.select("#basic-timeline")
+                        .stackedTimeline(basicOptions);
+
+        //the data set for the advanced example
+        advancedData = {
+            config: [{ className: "first" }, { className: "second", borderRadius: 5 }, { className: "third" }],
+            rows: [
+            {
+                label: "Task ABC",
+                labelIcon: "\uf0ae",
+                events: [{ hoverText: "The first event", start: baseDate, end: addDays(baseDate, 4) },
+                         { hoverText: "Second level event - class is 'second'", start: addDays(baseDate, 2), end: addDays(baseDate, 3) },
+                         {  hoverText: "third event", start: addDays(baseDate, 4), end: addDays(baseDate, 6) }]
+            },
+            {
+                label: "Person 123",
+                labelIcon: "\uf007",
+                events: [{ hoverText: "first level", start: addDays(baseDate, 2), end: addDays(baseDate, 7) },
+                         { hoverText: "second level on top of first", start: addDays(baseDate, 4), end: addDays(baseDate, 5) },
+                         { start: addDays(baseDate, 6), end: addDays(baseDate, 8) }]
+            },
+            {
+                label: "Facebook",
+                labelIcon: "\uf230",
+                labelIconClassName: "fb-icon",
+                events: [{ hoverText: "This row has a colored icon through custom class 'fb-icon'", start: addDays(baseDate, 1), end: addDays(baseDate, 6) },
+                         { hoverText: "Second level event", start: addDays(baseDate, 4), end: addDays(baseDate, 7) }]
+
+            },
+            {
+                labelIcon: "\uf1b9",
+                events: [{ hoverText: "this row has no label just an icon", start: addDays(baseDate, 2), end: addDays(baseDate, 7) },
+                        { start: addDays(baseDate, 4), end: addDays(baseDate, 6) },
+                        { hoverText: "third level event with its own class 'alt-third'", className: "alt-third", start: addDays(baseDate, 7), end: addDays(baseDate, 9) }]
+            },
+            {
+                label: "VB-QWE",
+                labelIcon: "\uf012",
+                events: [{ start: addDays(baseDate, 2), end: addDays(baseDate, 10) },
+                     { start: addDays(baseDate, 4), end: addDays(baseDate, 8) }]
+            },
+            {
+                label: "James T",
+                labelIcon: "\uf21b",
+                events: [{ start: addDays(baseDate, 4), end: addDays(baseDate, 7) },
+                        { start: addDays(baseDate, 5), end: addDays(baseDate, 6) },
+                        { hoverText: "A third level event that starts before the others", start: addDays(baseDate, 2), end: addDays(baseDate, 4) }]
+            },
+            {
+                label: "Project Stuff",
+                labelIcon: "\uf0ad",
+                events: [{ start: addDays(baseDate, 5), end: addDays(baseDate, 9) },
+                     { start: addDays(baseDate, 6.5), end: addDays(baseDate, 7) }]
+            }]
+        };
+
+        //set up the advanced startup options
+        var advancedOptions = {
+            data: advancedData,
+            labelWidth: 160,
+            timeRangeFormat: d3.time.format("%d %b %Y"),
+            rowHeight: 50,
+            xAxisPosition: "both",
+            maxHeight: 350,
+            width: 1300
+        }
+
+
+        var advancedTimeline = d3.select("#adv-timeline")
+                           .stackedTimeline(advancedOptions);
+
+
+        //assign event handlers to the api controls. Just to give examples of setting parameters after timeline creation
+        d3.selectAll(".zoom-in").on("click", function () {
+            var tl = d3.select(this).attr("data-timeline") === "basic" ? basicTimeline : advancedTimeline;
+            tl.zoom(2);
+        });
+
+        d3.selectAll(".zoom-out").on("click", function () {
+            var tl = d3.select(this).attr("data-timeline") === "basic" ? basicTimeline : advancedTimeline;
+            tl.zoom(0.5);
+        });
+
+        d3.selectAll(".center-now").on("click", function () {
+            var tl = d3.select(this).attr("data-timeline") === "basic" ? basicTimeline : advancedTimeline;
+            tl.goToDate(new Date());
+        });
+
+        d3.selectAll(".go-to-range").on("click", function () {
+            var tl = d3.select(this).attr("data-timeline") === "basic" ? basicTimeline : advancedTimeline;
+
+            var xMin = d3.min(basicData.rows, function (d) {
+                return d3.min(d.events, function (d) { return d.start });
+            });
+
+            var xMax = d3.max(basicData.rows, function (d) {
+                return d3.max(d.events, function (d) { return d.end });
+            });
+
+            tl.goToDateRange(xMin, xMax);
+        });
+
+        d3.selectAll(".width").on("change", function () {
+            var tl = d3.select(this).attr("data-timeline") === "basic" ? basicTimeline : advancedTimeline;
+            var val = this.value;
+            if (!isNaN(val)) {
+                tl.width(val);
+            }
+            else {
+                this.value = tl.width(); //reset text box to current value if entered value is not a number
+            }
+        });
+
+        d3.selectAll(".height").on("change", function () {
+            var tl = d3.select(this).attr("data-timeline") === "basic" ? basicTimeline : advancedTimeline;
+            var val = this.value;
+            if (!isNaN(val)) {
+                tl.maxHeight(val);
+            }
+            else {
+                this.value = tl.maxHeight(); //reset text box to current value if entered value is not a number
+            }
+        });
+
+
+        d3.selectAll(".row-height").on("change", function () {
+            var tl = d3.select(this).attr("data-timeline") === "basic" ? basicTimeline : advancedTimeline;
+            var val = this.value;
+            if (!isNaN(val)) {
+                tl.rowHeight(val);
+            }
+            else {
+                this.value = tl.rowHeight(); //reset text box to current value if entered value is not a number
+            }
+        });
+
+        d3.selectAll(".label-width").on("change", function () {
+            var tl = d3.select(this).attr("data-timeline") === "basic" ? basicTimeline : advancedTimeline;
+            var val = this.value;
+            if (!isNaN(val)) {
+                tl.labelWidth(val);
+            }
+            else {
+                this.value = tl.labelWidth(); //reset text box to current value if entered value is not a number
+            }
+        });
+
+
+        d3.selectAll(".limit-data").on("change", function () {
+            var cb = d3.select(this);
+            var tl = cb.attr("data-timeline") === "basic" ? basicTimeline : advancedTimeline;
+            tl.limitDatesToData(cb.property("checked"));
+        });
+
+        d3.selectAll(".display-current").on("change", function () {
+            var cb = d3.select(this);
+            var tl = cb.attr("data-timeline") === "basic" ? basicTimeline : advancedTimeline;
+            tl.displayCurrent(cb.property("checked"));
+        });
+
+        d3.selectAll(".update-current").on("change", function () {
+            var tl = d3.select(this).attr("data-timeline") === "basic" ? basicTimeline : advancedTimeline;
+            var val = this.value;
+            if (!isNaN(val)) {
+                tl.updateCurrentMs(val);
+            }
+            else {
+                this.value = tl.updateCurrentMs(); //reset text box to current value if entered value is not a number
+            }
+        });
+
+        d3.selectAll(".date-axis").on("change", function () {
+            var tl = d3.select(this).attr("data-timeline") === "basic" ? basicTimeline : advancedTimeline;
+            tl.xAxisPosition(this.value);
+        });
+
+        d3.selectAll(".display-time-range").on("change", function () {
+            var cb = d3.select(this);
+            var tl = cb.attr("data-timeline") === "basic" ? basicTimeline : advancedTimeline;
+            tl.displayTimeRange(cb.property("checked"));
+        });
+
+
+        //helper function to add days to a date for the test data generation.
+        function addDays(date, days) {
+            return d3.time.day.offset(date, days);
+        }
+
+    </script>
+
+
+</body>
+</html>
