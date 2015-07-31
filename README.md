@@ -4,7 +4,7 @@ A timeline built using d3.
 
 ![alt tag](https://github.com/nickcam/d3-StackedTimeline/blob/master/exampleimage/stackedTimeline.PNG)
 
-Couple of examples here, exactly the same as index.html that's committed. 
+Couple of examples in the link below, exactly the same as index.html that's committed. 
 
 http://stackedtimeline.azurewebsites.net/
 
