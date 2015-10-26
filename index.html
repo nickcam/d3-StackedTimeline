@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
 
     <link href="timeline.css" rel="stylesheet" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js" charset="utf-8"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js" charset="utf-8"></script>
 
     <script src="stackedTimeline.js"></script>
 
@@ -163,7 +163,7 @@
 
     <div class="example">
         <h2>Basic</h2>
-        <div><strong>Only required styling, single level of data, default options</strong></div><br />
+        <div><strong>Only required styling, single level of data, default options</strong></div><br /> <br />
 
         <div id="basic-timeline" class="basic">
         </div>
@@ -326,7 +326,7 @@
 
         //the data set for the basic example
         basicData = {
-            config: [{ className: "bar" }],
+            config: [{ className: "bar", height: "20" }],
             rows: [
             {
                 label: "Task ABC",
@@ -370,7 +370,7 @@
 
         //the data set for the advanced example
         advancedData = {
-            config: [{ className: "first" }, { className: "second", borderRadius: 5 }, { className: "third" }],
+            config: [{ className: "first", height: "20" }, { className: "second", borderRadius: 5, height: "28" }, { className: "third", height: "10" }],
             rows: [
             {
                 label: "Task ABC",

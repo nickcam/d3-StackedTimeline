@@ -18,6 +18,7 @@
             displayTimeRange (bool | default: true): Whether to display the time range bounds at the start and end of the date axis.
             timeRangeFormat (d3.time.format | default: d3.time.format("%a %d %b %Y")): The time format to format the time range strings.
             displayCurrent (bool | default: true): Whether to display the current time as a line on the chart.
+            currentDateUTC: (bool | default : false): If the current date should display as UTC
             updateCurrentMs (number | default: 6000): The amount of milliseconds to update the current line if it's displayed.
             limitDatesToData (bool | default: false): Whether to limit panning of the x-axis to the calculated min and max dates specified in the data associated with the chart.
             minDate (date | default: undefined): The minimum date the date axis can be panned to. If limitDatesToData is set to true this value is ignored.
@@ -27,7 +28,7 @@
             data (object | default: undefined): The data to apply to the chart. Format described below.
 
             data of the chart is an object with two array properties - config and rows:
-            config objects can contain two properties - className & borderRadius.
+            config objects can contain 3 properties - className, height & borderRadius.
             The order in which config objects are defined in the array is important and relates to the row objects events array.
             The below example will set a className on all events at index 0 to be 'a-class' with no border radius set. All events at index 1 will have a className of 'b-class' and a border radius of 10.
 
@@ -42,7 +43,7 @@
 
             data Example: (obviously needs real dates for start and end).
             {
-                config: [{ className: "a-class" }, { className: "b-class", borderRadius: 10 }],
+                config: [{ className: "a-class", height: "15" }, { className: "b-class", borderRadius: 10, height: "25" }],
                  rows: [
                         {
                             label: "Task ABC",
@@ -77,6 +78,7 @@
 
         var displayCurrent = options.displayCurrent === false ? false : true;
         var updateCurrentMs = options.updateCurrentMs || 6000;
+        var currentDateUTC = options.currentDateUTC;
 
         var limitDatesToData = options.limitDatesToData === true;
         var minDate = options.minDate;
@@ -188,7 +190,7 @@
             _setYAxis();
             _setXAxis();
 
-            if (ex) {
+            if (ex && ex[0].toString() !== "Invalid Date" && ex[1].toString() !== "Invalid Date") {
                 //reset the current domain to the original one if one was set earlier
                 x.domain(ex);
             }
@@ -200,6 +202,21 @@
         function _setData(trans) {
             if (!data) {
                 return;
+            }
+
+            //manually set date start and end properties to a actual date object if it is a string. Probably a quicker d3 way to do this instead of just looping and using general javascript new Date();
+            for (var i = 0, il = data.rows.length; i < il; i++) {
+                for (var j = 0, jl = data.rows[i].events.length; j < jl; j++) {
+                    var ev = data.rows[i].events[j];
+                    if (ev.start instanceof String || typeof ev.start === "string") {
+                        ev.start = new Date(ev.start);
+                    }
+
+                    if (ev.end instanceof String || typeof ev.end === "string") {
+                        ev.end = new Date(ev.end);
+                    }
+                }
+
             }
 
             _setDimensions();
@@ -393,7 +410,12 @@
                 var r = rows.append("rect")
                     .attr("class", function (d) {
                         if (d.events.length > idx) {
-                            return "event-rect " + (d.events[idx].className ? d.events[idx].className : data.config[idx].className ? data.config[idx].className : "");
+                            return "event-rect " + (d.events[idx].className ? d.events[idx].className : (data.config && data.config.length > idx && data.config[idx].className) ? data.config[idx].className : "");
+                        }
+                    })
+                    .attr("height", function (d) {
+                        if (d.events.length > idx) {
+                            return (d.events[idx].height ? d.events[idx].height : (data.config && data.config.length > idx && data.config[idx].height) ? data.config[idx].height : "");
                         }
                     })
                     .attr("x", function (d) {
@@ -406,7 +428,7 @@
                     })
                     .attr("width", function (d) {
                         if (d.events.length > idx) {
-                            if (!trans) {
+                            if (!trans && d.events[idx].start <= d.events[idx].end) {
                                 var st = x(d.events[idx].start);
                                 var en = x(d.events[idx].end);
                                 var sc = en - st;
@@ -419,12 +441,12 @@
                     })
                     .attr("rx", function (d) {
                         if (d.events.length > idx) {
-                            return d.events[idx].borderRadius ? d.events[idx].borderRadius : data.config[idx].borderRadius ? data.config[idx].borderRadius : 0;
+                            return d.events[idx].borderRadius ? d.events[idx].borderRadius : (data.config && data.config.length > idx && data.config[idx].borderRadius) ? data.config[idx].borderRadius : 0;
                         }
                     })
                     .attr("ry", function (d) {
                         if (d.events.length > idx) {
-                            return d.events[idx].borderRadius ? d.events[idx].borderRadius : data.config[idx].borderRadius ? data.config[idx].borderRadius : 0;
+                            return d.events[idx].borderRadius ? d.events[idx].borderRadius : (data.config && data.config.length > idx && data.config[idx].borderRadius) ? data.config[idx].borderRadius : 0;
                         }
                     })
                     .attr("data-hover", function (d) {
@@ -436,7 +458,7 @@
                 if (trans) {
                     r.transition().duration(transitionDuration)
                         .attr("width", function (d) {
-                            if (d.events.length > idx) {
+                            if (d.events.length > idx && d.events[idx].start <= d.events[idx].end) {
                                 var st = x(d.events[idx].start);
                                 var en = x(d.events[idx].end);
                                 var sc = en - st;
@@ -502,6 +524,10 @@
         function _updateCurrentLine() {
 
             var currentDate = new Date();
+            if (currentDateUTC) {
+                currentDate = new Date(currentDate.getUTCFullYear(), currentDate.getUTCMonth(), currentDate.getUTCDate(), currentDate.getUTCHours(), currentDate.getUTCMinutes(), currentDate.getUTCSeconds());
+            }
+
             var xVal = displayCurrent ? (x(currentDate) ? x(currentDate) : 0) : 0;
             currentLine
                 .attr("x1", xVal)
@@ -674,6 +700,12 @@
             return this;
         }
 
+        function _transition(trans) {
+            if (!arguments.length) return transition;
+            transition = trans;
+            return this;
+        }
+
         function _resetYZoomTrans(yZoomTrans) {
             var zt = zoom.translate();
             zoom.translate([zt[0], yZoomTrans]);
@@ -687,6 +719,8 @@
             }
             return true;
         }
+
+
 
         //#endregion
 
@@ -708,7 +742,8 @@
             limitDatesToData: _limitDatesToData,
             minDate: _minDate,
             maxDate: _maxDate,
-            dateAxisTickFormat: _dateAxisTickFormat
+            dateAxisTickFormat: _dateAxisTickFormat,
+            transition: _transition
         }
     }
 
