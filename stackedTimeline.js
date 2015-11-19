@@ -10,12 +10,13 @@
                     timeline.width(200).displayCurrent(false).maxDate(new Date());
 
             width (number | default: 1000): The total width of the chart area, including labels.
-            maxHeight (number | default: 300): The max height of the total chart area. The actual height could be less if the (row height * number of rows) is less than this amount. If (row height * number of rows) is greater than this setting the y-axis can be panned.
+            height (number | default: 300): The total height of the chart area, including labels and time ranges.
             labelWidth (number | default: 130): The width of the y axis labels section. This is included in the width setting. So chart area width will be (width - labelWidth).
             rowHeight (number | default: 30): The height of each row (ie: y-axis object).
             xAxisPosition (string | default: 'bottom'): One of the following strings, 'bottom', 'top', 'both'. Indicates where the date axis will display.
             dateAxisTickFormat (d3.time.format.multi | default: The default d3.time.format.multi): The tick format to apply to the date axis.
             displayTimeRange (bool | default: true): Whether to display the time range bounds at the start and end of the date axis.
+            displayScrollbar (bool | default: true) Whether to display a scrollbar at the edges of the chart indicating that there are more records that are hidden.
             timeRangeFormat (d3.time.format | default: d3.time.format("%a %d %b %Y")): The time format to format the time range strings.
             displayCurrent (bool | default: true): Whether to display the current time as a line on the chart.
             currentDateUTC: (bool | default : false): If the current date should display as UTC
@@ -70,15 +71,17 @@
         var dateAxisTickFormat = options.dateAxisTickFormat;
 
         var fullWidth = options.width || 1000;
-        var maxHeight = options.maxHeight || 300;
+        var fullHeight = options.height || 300;
+
         var labelWidth = options.labelWidth || 130;
         var rowHeight = options.rowHeight || 30;
 
-        var fullHeight, height, totalRowHeight, width, margin, heightMargin;
+        var chartHeight, totalRowHeight, width, margin, heightMargin;
 
         var displayCurrent = options.displayCurrent === false ? false : true;
         var updateCurrentMs = options.updateCurrentMs || 6000;
         var currentDateUTC = options.currentDateUTC;
+        var displayScrollbar = options.displayScrollbar === false ? false : true;
 
         var limitDatesToData = options.limitDatesToData === true;
         var minDate = options.minDate;
@@ -89,8 +92,10 @@
 
         var data = options.data || { rows: [] };
 
+        var outerContainer = this;
         var uid = this.attr("id") + "-" + this.attr("class");
 
+        this.style("position", "relative");
         var container = this.append("svg");
 
 
@@ -144,6 +149,13 @@
                 .attr("class", "hover-div")
                 .style({ "display": "none", "position": "absolute" });
 
+        var scrollbar = this.append("div")
+                .attr("class", "scrollbar")
+                .style("display", "none");
+
+        var scrollbarSlider = scrollbar.append("div")
+                .attr("class", "slider");
+
         var x, xAxisBottom, xAxisTop, y, yCopy, yAxis, zoom;
         _setData(transition);
         _setCurrentLine();
@@ -164,26 +176,49 @@
             };
 
             heightMargin = margin.top + margin.bottom;
+            //totalRowHeight = rowHeight * data.rows.length;
 
             width = fullWidth - margin.right - margin.left;
-            totalRowHeight = rowHeight * data.rows.length;
-            fullHeight = (totalRowHeight + heightMargin) > maxHeight ? maxHeight : totalRowHeight + heightMargin;
-            height = fullHeight - heightMargin;
 
+            //fullHeight = (totalRowHeight + heightMargin) > maxHeight ? maxHeight : totalRowHeight + heightMargin;
+            chartHeight = fullHeight - heightMargin;
+
+            //if height is set and the total row height doesn't reach the height setting + 1 extra row, add blank rows to the data until it is reached.
+            //clear blank rows first
+            for (var i = 0, len = data.rows.length; i < len; i++) {
+                if (!data.rows[i].label && data.rows[i].events.length === 0) {
+                    data.rows.splice(i, 1);
+                    i--;
+                    len--;
+                }
+            }
+
+            var dataHeight = (data.rows.length * rowHeight) + rowHeight;
+            if (chartHeight > dataHeight) {
+                var blankRows = Math.ceil((chartHeight - dataHeight) / rowHeight);
+                for (var i = 0; i < blankRows; i++) {
+                    data.rows.push({ events: [] });
+                }
+            }
+
+            totalRowHeight = rowHeight * data.rows.length;
+            if (chartHeight > totalRowHeight) {
+                chartHeight = totalRowHeight;
+            }
 
             //set the dimensions of the elements
             container.attr("height", fullHeight).attr("width", fullWidth);
             svg.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-            clipPath.attr("height", height).attr("width", width);
-            yClipPath.attr("height", height).attr("width", fullWidth - margin.right).attr("transform", "translate(" + -margin.left + ",0)");
-            yax.attr("height", height);
-            dataGroup.attr("height", height).attr("width", width);
-            rect.attr("height", height).attr("width", width);
+            clipPath.attr("height", chartHeight).attr("width", width);
+            yClipPath.attr("height", chartHeight).attr("width", fullWidth - margin.right).attr("transform", "translate(" + -margin.left + ",0)");
+            yax.attr("height", chartHeight);
+            dataGroup.attr("height", chartHeight).attr("width", width);
+            rect.attr("height", chartHeight).attr("width", width);
 
             xaxTop.attr("transform", "translate(0,0)").attr("height", 0).attr("opacity", 0).select(".tick").attr("opacity", 0);
-            timeRangeTop.attr("transform", "translate(0,-25)").attr("height", (displayTimeRange ? 25 : 0)).attr("width", width).attr("opacity", displayTimeRange ? 1 : 0);
-            xaxBottom.attr("transform", "translate(0," + height + ")").attr("height", 0).attr("opacity", 0).select(".tick").attr("opacity", 0);
-            timeRangeBottom.attr("transform", "translate(0," + (height + 35) + ")").attr("height", displayTimeRange ? 25 : 0).attr("width", width).attr("opacity", displayTimeRange ? 1 : 0);
+            timeRangeTop.attr("transform", "translate(0,-25)").attr("height", (margin.top > 0 ? 25 : 0)).attr("width", width).attr("opacity", margin.top > 0 ? 1 : 0).style("display", (margin.top > 0 ? "block" : "none"));
+            xaxBottom.attr("transform", "translate(0," + chartHeight + ")").attr("height", 0).attr("opacity", 0).select(".tick").attr("opacity", 0);
+            timeRangeBottom.attr("transform", "translate(0," + (chartHeight + 35) + ")").attr("height", margin.bottom > 0 ? 25 + "px" : "0px").attr("width", width + "px").attr("opacity", margin.bottom > 0 ? 1 : 0).style("display", (margin.bottom > 0 ? "block" : "none"));
 
             container.selectAll(".time-range .time-range-end").attr("transform", "translate(" + width + ",0)");
 
@@ -216,13 +251,13 @@
                         ev.end = new Date(ev.end);
                     }
                 }
-
             }
 
             _setDimensions();
+
             zoom = d3.behavior.zoom()
                    .x(x)
-                   .size([width, height])
+                   .size([width, chartHeight])
                    .on("zoom", _zoom)
                    .on("zoomstart", _zoomStart)
                    .on("zoomend", _zoomEnd);
@@ -262,7 +297,13 @@
 
             hoverDiv.text(hoverElement.attr("data-hover"));
             var ow = hoverDiv[0][0].offsetWidth;
-            hoverDiv.style({ "left": ((currentX + document.body.scrollLeft) - (ow / 4)) + "px", "top": ((currentY + document.body.scrollTop) + 15) + "px", "display": "block" });
+
+            //calc position of hover
+            var topDiff = outerContainer[0][0].offsetTop - document.body.scrollTop;
+            var leftDiff = outerContainer[0][0].offsetLeft - document.body.scrollLeft;
+
+            hoverDiv.style({ "left": ((currentX - leftDiff) - (ow / 4)) + "px", "top": ((currentY - topDiff) + 25) + "px", "display": "block" });
+
         });
 
         rect.on("mouseout", function (d, e) {
@@ -324,7 +365,7 @@
             x.domain([xMin, xMax]);
 
             if (xAxisPosition === "both" || xAxisPosition === "bottom") {
-                xAxisBottom = d3.svg.axis().scale(x).orient("bottom").tickSize(-height, 0).tickPadding(6);
+                xAxisBottom = d3.svg.axis().scale(x).orient("bottom").tickSize(-chartHeight, 0).tickPadding(6);
                 if (dateAxisTickFormat) {
                     xAxisBottom.tickFormat(dateAxisTickFormat);
                 }
@@ -336,7 +377,7 @@
             }
 
             if (xAxisPosition === "both" || xAxisPosition === "top") {
-                xAxisTop = d3.svg.axis().scale(x).orient("top").tickSize(-height, 0).tickPadding(6);
+                xAxisTop = d3.svg.axis().scale(x).orient("top").tickSize(-chartHeight, 0).tickPadding(6);
                 if (dateAxisTickFormat) {
                     xAxisTop.tickFormat(dateAxisTickFormat);
                 }
@@ -365,7 +406,7 @@
 
             //limit panning to the bounds of the y-axis count and/or the specified date bounds
             ty = Math.min(ty, 0);
-            ty = Math.max(ty, height - totalRowHeight);
+            ty = Math.max(ty, chartHeight - totalRowHeight);
 
             if (limitDatesToData || (maxDate || minDate)) {
                 var max = (limitDatesToData || maxDate) ? d3.max(x.range()) : Infinity;
@@ -380,6 +421,10 @@
                 //if panning manually update the y domain. This is so the y-axis can be panned, but y scale isn't included in the zoom object so that y-axis it doesn't get zoomed in or out.
                 y.domain(yCopy.range().map(function (y) { return (y - ty) / 1; }).map(yCopy.invert));
                 cyt = ty;
+
+                if (displayScrollbar) {
+                    _displayOverflowCheck();
+                }
             }
 
             _draw();
@@ -391,7 +436,42 @@
             var t = zoom.translate();
             zoom.translate([t[0], cyt]);
             isZooming = false;
+
+            if (displayScrollbar) {
+                _displayOverflowCheck();
+            }
         }
+
+
+        function _displayOverflowCheck() {
+            var moreItems = totalRowHeight > chartHeight;
+            if (!moreItems) {
+                scrollbar.style("display", "none");
+                return;
+            }
+
+            var scrollMargin = 3;
+
+            var scrollbarElement = scrollbar[0][0];
+            var top = xAxisPosition === "both" ? (heightMargin / 2) : xAxisPosition === "bottom" ? 0 : heightMargin;
+            top += scrollMargin;
+            var scrollHeight = chartHeight - (scrollMargin * 2);
+
+            var left = width + labelWidth - scrollbarElement.offsetWidth - scrollMargin;
+            scrollbar.style({ "display": "block", "height": scrollHeight + "px", "top": top + "px", "left": left + "px" });
+
+            var sliderElement = scrollbarSlider[0][0];
+            var sliderLeft = (scrollbarElement.offsetWidth / 2) - (sliderElement.offsetWidth / 2);
+            var sliderHeight = (chartHeight / totalRowHeight) * chartHeight;
+            var sliderTop = Math.abs(zoom.translate()[1]) / (totalRowHeight / chartHeight);
+
+
+            sliderHeight -= (scrollMargin * 4);
+            sliderTop += scrollMargin;
+
+            scrollbarSlider.style({ "left": sliderLeft + "px", "height": sliderHeight + "px", "top": sliderTop + "px" });
+        }
+
 
         function _draw(trans) {
 
@@ -507,6 +587,10 @@
 
             _updateCurrentLine();
 
+
+            if (displayScrollbar) {
+                _displayOverflowCheck();
+            }
         };
 
         var setCurrentIntervalId;
@@ -533,8 +617,10 @@
                 .attr("x1", xVal)
                 .attr("y1", 0)
                 .attr("x2", xVal)
-                .attr("y2", displayCurrent ? height : 0);
+                .attr("y2", displayCurrent ? chartHeight : 0);
         }
+
+
 
         //#endregion
 
@@ -622,6 +708,16 @@
             return this;
         }
 
+        function _height(value) {
+            if (!arguments.length) return fullHeight;
+            if (!_checkNumberParam("height", value)) return;
+            fullHeight = value;
+            var cyt = zoom.translate()[1];
+            _setData();
+            _resetYZoomTrans(cyt);
+            return this;
+        }
+
         function _rowHeight(value) {
             if (!arguments.length) return rowHeight;
             if (!_checkNumberParam("rowHeight", value)) return;
@@ -655,6 +751,14 @@
         function _timeRangeFormat(value) {
             if (!arguments.length) return timeRangeFormat;
             timeRangeFormat = value;
+            _setData();
+            return this;
+        }
+
+
+        function _displayScrollbar(value) {
+            if (!arguments.length) return displayScrollbar;
+            displayScrollbar = value;
             _setData();
             return this;
         }
@@ -706,6 +810,15 @@
             return this;
         }
 
+        function _setWidthHeight(width, height) {
+            fullWidth = width;
+            fullHeight = height;
+            var cyt = zoom.translate()[1];
+            _setData();
+            _resetYZoomTrans(cyt);
+            return this;
+        }
+
         function _resetYZoomTrans(yZoomTrans) {
             var zt = zoom.translate();
             zoom.translate([zt[0], yZoomTrans]);
@@ -720,7 +833,10 @@
             return true;
         }
 
-
+        //initialize scrollbar
+        if (displayScrollbar) {
+            _displayOverflowCheck();
+        }
 
         //#endregion
 
@@ -733,7 +849,7 @@
             goToDate: _goToDate,
             goToDateRange: _goToDateRange,
             width: _width,
-            maxHeight: _maxHeight,
+            height: _height,
             rowHeight: _rowHeight,
             labelWidth: _labelWidth,
             xAxisPosition: _xAxisPosition,
@@ -743,7 +859,9 @@
             minDate: _minDate,
             maxDate: _maxDate,
             dateAxisTickFormat: _dateAxisTickFormat,
-            transition: _transition
+            transition: _transition,
+            displayScrollbar: _displayScrollbar,
+            setWidthHeight: _setWidthHeight
         }
     }
 

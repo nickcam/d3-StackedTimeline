@@ -2,14 +2,19 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
     <title></title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
 
     <link href='http://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
 
     <link href="timeline.css" rel="stylesheet" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js" charset="utf-8"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.4/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.5/d3.min.js" charset="utf-8"></script>
 
     <script src="stackedTimeline.js"></script>
+    <script src="stackedTimeline2.js"></script>
+    <!--<script src="d3-timeline.js"></script>-->
+    <!--<script src="pluginTest.js"></script>-->
 
     <style>
         /* Begin:  General styles for example page */
@@ -54,6 +59,23 @@
             stroke: black;
             shape-rendering: crispEdges;
         }
+
+
+        .scrollbar {
+            position: absolute;
+            width: 10px;
+            background: rgba(208, 208, 208, 0.6);
+            border-radius: 10px;
+        }
+
+            .scrollbar .slider {
+                position: absolute;
+                background: rgba(0, 0, 0, 0.4);
+                width: 6px;
+                border-radius: 10px;
+                height: 40px;
+            }
+
 
         /* End:  General styles for example page */
 
@@ -154,6 +176,7 @@
             fill: #3E5B99;
         }
 
+
         /* End:  Advanced styles - custom styles for advanced version */
     </style>
 
@@ -163,8 +186,9 @@
 
     <div class="example">
         <h2>Basic</h2>
-        <div><strong>Only required styling, single level of data, default options</strong></div><br /> <br />
-
+        <div><strong>Only required styling, single level of data, default options</strong></div>
+        <br />
+        <br />
         <div id="basic-timeline" class="basic">
         </div>
 
@@ -182,7 +206,7 @@
                 </span>
 
                 <span>
-                    <label for="basic-height">Max height: </label>
+                    <label for="basic-height">Height: </label>
                     <input class="height" data-timeline="basic" type="text" id="basic-height" style="width: 40px;" value="300" />
                 </span>
 
@@ -260,7 +284,7 @@
                 </span>
 
                 <span>
-                    <label for="adv-height">Max height: </label>
+                    <label for="adv-height">Height: </label>
                     <input class="height" data-timeline="adv" type="text" id="adv-height" style="width: 40px;" value="350" />
                 </span>
 
@@ -362,7 +386,8 @@
 
         //set up and create the basic example
         var basicOptions = {
-            data: basicData
+            data: basicData,
+            transition: false
         }
 
         var basicTimeline = d3.select("#basic-timeline")
@@ -375,9 +400,9 @@
             {
                 label: "Task ABC",
                 labelIcon: "\uf0ae",
-                events: [{ hoverText: "The first event", start: baseDate, end: addDays(baseDate, 4) },
+                events: [{ hoverText: "The first event", start: baseDate, end: addDays(baseDate, 4), height: "25" },
                          { hoverText: "Second level event - class is 'second'", start: addDays(baseDate, 2), end: addDays(baseDate, 3) },
-                         {  hoverText: "third event", start: addDays(baseDate, 4), end: addDays(baseDate, 6) }]
+                         { hoverText: "third event", start: addDays(baseDate, 4), end: addDays(baseDate, 6) }]
             },
             {
                 label: "Person 123",
@@ -428,14 +453,12 @@
             timeRangeFormat: d3.time.format("%d %b %Y"),
             rowHeight: 50,
             xAxisPosition: "both",
-            maxHeight: 350,
+            height: 350,
             width: 1300
         }
 
-
         var advancedTimeline = d3.select("#adv-timeline")
                            .stackedTimeline(advancedOptions);
-
 
         //assign event handlers to the api controls. Just to give examples of setting parameters after timeline creation
         d3.selectAll(".zoom-in").on("click", function () {
@@ -471,7 +494,7 @@
             var tl = d3.select(this).attr("data-timeline") === "basic" ? basicTimeline : advancedTimeline;
             var val = this.value;
             if (!isNaN(val)) {
-                tl.width(val);
+                tl.width(parseFloat(val));
             }
             else {
                 this.value = tl.width(); //reset text box to current value if entered value is not a number
@@ -482,10 +505,10 @@
             var tl = d3.select(this).attr("data-timeline") === "basic" ? basicTimeline : advancedTimeline;
             var val = this.value;
             if (!isNaN(val)) {
-                tl.maxHeight(val);
+                tl.height(parseFloat(val));
             }
             else {
-                this.value = tl.maxHeight(); //reset text box to current value if entered value is not a number
+                this.value = tl.height(); //reset text box to current value if entered value is not a number
             }
         });
 
@@ -494,7 +517,7 @@
             var tl = d3.select(this).attr("data-timeline") === "basic" ? basicTimeline : advancedTimeline;
             var val = this.value;
             if (!isNaN(val)) {
-                tl.rowHeight(val);
+                tl.rowHeight(parseFloat(val));
             }
             else {
                 this.value = tl.rowHeight(); //reset text box to current value if entered value is not a number
@@ -505,7 +528,7 @@
             var tl = d3.select(this).attr("data-timeline") === "basic" ? basicTimeline : advancedTimeline;
             var val = this.value;
             if (!isNaN(val)) {
-                tl.labelWidth(val);
+                tl.labelWidth(parseFloat(val));
             }
             else {
                 this.value = tl.labelWidth(); //reset text box to current value if entered value is not a number
@@ -529,7 +552,7 @@
             var tl = d3.select(this).attr("data-timeline") === "basic" ? basicTimeline : advancedTimeline;
             var val = this.value;
             if (!isNaN(val)) {
-                tl.updateCurrentMs(val);
+                tl.updateCurrentMs(parseFloat(val));
             }
             else {
                 this.value = tl.updateCurrentMs(); //reset text box to current value if entered value is not a number
@@ -557,4 +580,5 @@
 
 
 </body>
+
 </html>
