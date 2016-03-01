@@ -37,26 +37,28 @@ var width = timeline.width();
 
 All of the possible options and getter/setters:
 ```
-    width (number | default: 1000): The total width of the chart area, including labels.
-    maxHeight (number | default: 300): The max height of the total chart area. The actual height could be less if the (row height * number of rows) is less than this amount. If (row height * number of rows) is greater than this setting the y-axis can be panned.
-    labelWidth (number | default: 130): The width of the y axis labels section. This is included in the width setting. So chart area width will be (width - labelWidth).
-    rowHeight (number | default: 30): The height of each row (ie: y-axis object).
-    xAxisPosition (string | default: 'bottom'): One of the following strings, 'bottom', 'top', 'both'. Indicates where the date axis will display.
-    dateAxisTickFormat (d3.time.format.multi | default: The default d3.time.format.multi): The tick format to apply to the date axis.
-    displayTimeRange (bool | default: true): Whether to display the time range bounds at the start and end of the date axis.
-    timeRangeFormat (d3.time.format | default: d3.time.format("%a %d %b %Y")): The time format to format the time range strings.
-    displayCurrent (bool | default: true): Whether to display the current time as a line on the chart.
-    updateCurrentMs (number | default: 6000): The amount of milliseconds to update the current line if it's displayed.
-    limitDatesToData (bool | default: false): Whether to limit panning of the x-axis to the calculated min and max dates specified in the data associated with the chart.
-    minDate (date | default: undefined): The minimum date the date axis can be panned to. If limitDatesToData is set to true this value is ignored.
-    maxDate (date | default: undefined): The maximum date the date axis can be panned to. If limitDatesToData is set to true this value is ignored.
-    transition (bool | default: true): Whether to transition the display of the data. Will transition the width of each rect from 0 to it's width. Transtion will only occur when changing the underlying data, ie: so on initila load or pasing a value to data() setter.
-    transitionDuration (number | default: 1000): The millisecond duration of the transition.
-    data (object | default: undefined): The data to apply to the chart. Format described below.
+width (number | default: 1000): The total width of the chart area, including labels.
+height (number | default: 300): The total height of the chart area, including labels and time ranges.
+labelWidth (number | default: 130): The width of the y axis labels section. This is included in the width setting. So chart area width will be (width - labelWidth).
+rowHeight (number | default: 30): The height of each row (ie: y-axis object).
+xAxisPosition (string | default: 'bottom'): One of the following strings, 'bottom', 'top', 'both'. Indicates where the date axis will display.
+dateAxisTickFormat (d3.time.format.multi | default: The default d3.time.format.multi): The tick format to apply to the date axis.
+displayTimeRange (bool | default: true): Whether to display the time range bounds at the start and end of the date axis.
+displayScrollbar (bool | default: true) Whether to display a scrollbar at the edges of the chart indicating that there are more records that are hidden.
+timeRangeFormat (d3.time.format | default: d3.time.format("%a %d %b %Y")): The time format to format the time range strings.
+displayCurrent (bool | default: true): Whether to display the current time as a line on the chart.
+currentDateUTC: (bool | default : false): If the current date should display as UTC
+updateCurrentMs (number | default: 6000): The amount of milliseconds to update the current line if it's displayed.
+limitDatesToData (bool | default: false): Whether to limit panning of the x-axis to the calculated min and max dates specified in the data associated with the chart.
+minDate (date | default: undefined): The minimum date the date axis can be panned to. If limitDatesToData is set to true this value is ignored.
+maxDate (date | default: undefined): The maximum date the date axis can be panned to. If limitDatesToData is set to true this value is ignored.
+transition (bool | default: true): Whether to transition the display of the data. Will transition the width of each rect from 0 to it's width. Transtion will only occur when changing the underlying data, ie: so on initila load or pasing a value to data() setter.
+transitionDuration (number | default: 1000): The millisecond duration of the transition.
+data (object | default: undefined): The data to apply to the chart. Format described below.
 ```
 
 'data' of the chart is an object with two array properties: config and rows:
-- config objects can contain two properties - className & borderRadius.
+- config objects can contain 3 properties - className, height & borderRadius.
 - The order in which config objects are defined in the array is important and relates to the row objects events array.
 - The data example will set a className on all events at index 0 to be 'a-class' with no border radius set. All events at index 1 will have a className of 'b-class' and a border radius of 10.
 
@@ -72,22 +74,22 @@ Each row entry relates to a y-axis entry.
 
 data Example: (obviously needs real dates for start and end).
 ```
+{
+  config: [{ className: "a-class", height: "15" }, { className: "b-class", borderRadius: 10, height: "25" }],
+  rows: [
   {
-      config: [{ className: "a-class" }, { className: "b-class", borderRadius: 10 }],
-       rows: [
-              {
-                  label: "Task ABC",
-                  labelIcon: "\uf0ae",
-                  events: [{ hoverText: "The first event", start: new Date(), end: new Date() },
-                           { hoverText: "Second level event", start: new Date(), end: new Date() }]
-              },
-              {
-                  label: "Person 123",
-                  labelIcon: "\uf007",
-                  events: [{ hoverText: "first level", start: new Date(), end: new Date() },
-                           { className: "replace-b-class" start: new Date(), end: new Date() }]
-              }]
-  }
+    label: "Task ABC",
+    labelIcon: "\uf0ae",
+    events: [{ hoverText: "The first event", start: new Date(), end: new Date() },
+             { hoverText: "Second level event", start: new Date(), end: new Date() }]
+            },
+  {
+    label: "Person 123",
+    labelIcon: "\uf007",
+    events: [{ hoverText: "first level", start: new Date(), end: new Date() },
+             { className: "replace-b-class" start: new Date(), end: new Date() }]
+  }]
+}
 ```
 
     
