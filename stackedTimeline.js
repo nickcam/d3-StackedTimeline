@@ -477,8 +477,33 @@
 
             dataGroup.selectAll("g.row").remove();
 
+            var drawRows = [];
+            //only draw rows that are in the visible area. Cuts down on DOM elements for performance in very large lists, although it adds an extra loop. Might be a better place to consolidate this loop somewhere else.
+            var moreItems = totalRowHeight > chartHeight;
+            if (moreItems) {
+                var yDom = y.domain();
+                var visibleRows = Math.ceil(chartHeight / rowHeight);
+                for (var i = 0, len = data.rows.length; i < len; i++) {
+                    var addRow = true;
+                    //check the y-axis to see if it should be drawn
+                    if (i < yDom[1] - 1) addRow = false; //this is above the visible area                    
+                    if (addRow && i >= yDom[1] + visibleRows) addRow = false; //this is below the visible area
+
+                    if (addRow) {
+                        drawRows.push(data.rows[i]);
+                    }
+                    else {
+                        drawRows.push({ events: [] }); //add an empty row with no elements as it's not visible
+                    }
+                }
+            }
+            else {
+                //include all rows
+                drawRows = data.rows;
+            }
+
             var rows = dataGroup.selectAll("g.data-group")
-                    .data(data.rows);
+                    .data(drawRows);
 
             rows.enter().append("g")
                     .attr("class", "row");
