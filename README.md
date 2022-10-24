@@ -87,7 +87,7 @@ data Example: (obviously needs real dates for start and end).
     label: "Person 123",
     labelIcon: "\uf007",
     events: [{ hoverText: "first level", start: new Date(), end: new Date() },
-             { className: "replace-b-class" start: new Date(), end: new Date() }]
+             { className: "replace-b-class", start: new Date(), end: new Date() }]
   }]
 }
 ```
